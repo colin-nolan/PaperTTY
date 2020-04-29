@@ -395,7 +395,7 @@ class EPD7in5v2(WaveshareFull):
         self.send_data(0x07) # VCOM_HV, VGHL_LV[1], VGHL_LV[0]
         self.send_data(0x3f) # VDH
         self.send_data(0x3f) # VDL
-        self.send_data(0xff) # VDHR
+#        self.send_data(0xff) # VDHR
 
         self.send_command(self.POWER_ON)
         self.wait_until_idle()
@@ -446,3 +446,19 @@ class EPD7in5v2(WaveshareFull):
         self.wait_until_idle()
         self.send_command(self.DEEP_SLEEP)
         self.send_data(0xA5)
+
+    def reset(self):
+        # Deliberately importing here to achieve same fail-on-use import behaviour as in `drivers_base.py`
+        import RPi.GPIO as GPIO
+
+        self.digital_write(self.RST_PIN, GPIO.HIGH)
+        self.delay_ms(200)
+        self.digital_write(self.RST_PIN, GPIO.LOW)
+        self.delay_ms(4)
+        self.digital_write(self.RST_PIN, GPIO.HIGH)
+        self.delay_ms(200)
+
+    def wait_until_idle(self):
+        self.send_command(0x71)
+        while self.digital_read(self.BUSY_PIN) == 0:  # 0: busy, 1: idle
+            self.send_command(0x71)
